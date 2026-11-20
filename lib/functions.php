@@ -48,7 +48,7 @@ function format_dt($dt)
     return date('d.m.Y H:i', strtotime($dt));
 }
 
-function json_out($data, $code = 200)
+function json_out($data, $code = 200): never
 {
     http_response_code($code);
     header('Content-Type: application/json; charset=utf-8');
@@ -61,6 +61,7 @@ function page_header($title)
     $menu = array(
         'index.php' => 'Рейсы',
         'invoices.php' => 'Счета',
+        'billing.php' => 'Счета за месяц',
         'load_report.php' => 'Загрузка машин',
     );
     $current = basename($_SERVER['SCRIPT_NAME']);

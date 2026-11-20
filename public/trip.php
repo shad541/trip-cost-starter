@@ -14,12 +14,6 @@ $cargo = db()->query("SELECT c.*, cl.name AS client_name
     WHERE c.trip_id = $id
     ORDER BY cl.name, c.id")->fetchAll();
 
-$shares = calc_share($id);
-$shares_total = 0;
-foreach ($shares as $share) {
-    $shares_total += $share['amount'];
-}
-
 page_header('Рейс ' . $trip['number']);
 ?>
 <p><a href="index.php">← Рейсы</a></p>
@@ -59,29 +53,31 @@ page_header('Рейс ' . $trip['number']);
     </tbody>
 </table>
 
-<h2>Доли клиентов</h2>
-<table class="grid">
+<h2>Распределение стоимости</h2>
+<p id="split-message" role="status">Загрузка распределения…</p>
+<p id="split-basis" hidden></p>
+<table id="trip-split" class="grid" data-trip-id="<?= $id ?>" hidden>
     <thead>
     <tr>
         <th>Клиент</th>
+        <th class="r">Грузов</th>
         <th class="r">Вес, кг</th>
+        <th class="r">Объём, м³</th>
         <th class="r">Доля, %</th>
         <th class="r">Сумма, ₽</th>
     </tr>
     </thead>
-    <tbody>
-    <?php foreach ($shares as $share): ?>
-        <tr>
-            <td><?= h($share['name']) ?></td>
-            <td class="r"><?= num($share['weight_kg']) ?></td>
-            <td class="r"><?= num($share['share'] * 100, 1) ?></td>
-            <td class="r"><?= money($share['amount']) ?></td>
+    <tbody></tbody>
+    <tfoot>
+        <tr class="total">
+            <td colspan="5">Сумма по клиентам</td>
+            <td id="split-total" class="r"></td>
         </tr>
-    <?php endforeach; ?>
-    <tr class="total">
-        <td colspan="3">Итого</td>
-        <td class="r"><?= money($shares_total) ?></td>
-    </tr>
-    </tbody>
+        <tr class="total">
+            <td colspan="5">Стоимость рейса</td>
+            <td id="split-cost" class="r"></td>
+        </tr>
+    </tfoot>
 </table>
+<script src="js/trip.js"></script>
 <?php page_footer();
