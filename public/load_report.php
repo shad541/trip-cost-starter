@@ -11,6 +11,9 @@ $trips = db()->query("SELECT t.*, (SELECT SUM(weight_kg) FROM cargo WHERE trip_i
     FROM trips t
     WHERE t.departure_date LIKE '$month%' AND t.status <> 'cancelled'
     ORDER BY t.departure_date")->fetchAll();
+$clientWeights = db()->prepare('SELECT cl.name, SUM(c.weight_kg) AS weight_kg
+    FROM cargo c JOIN clients cl ON cl.id = c.client_id
+    WHERE c.trip_id = ? GROUP BY c.client_id, cl.name ORDER BY weight_kg DESC, c.client_id');
 
 page_header('Загрузка машин');
 ?>
@@ -40,10 +43,7 @@ page_header('Загрузка машин');
     <?php foreach ($trips as $trip): ?>
         <?php
         $load = $trip['capacity_kg'] ? $trip['weight_kg'] / $trip['capacity_kg'] * 100 : 0;
-        $shares = calc_share($trip['id']);
-        uasort($shares, function ($a, $b) {
-            return $b['share'] <=> $a['share'];
-        });
+        $clientWeights->execute([$trip['id']]);
         ?>
         <tr class="total">
             <td><a href="trip.php?id=<?= $trip['id'] ?>"><?= h($trip['number']) ?></a></td>
@@ -53,12 +53,12 @@ page_header('Загрузка машин');
             <td class="r"><?= num($trip['weight_kg']) ?></td>
             <td class="r"><?= num($load, 1) ?></td>
         </tr>
-        <?php foreach ($shares as $share): ?>
+        <?php foreach ($clientWeights->fetchAll() as $client): ?>
             <tr class="sub">
-                <td><?= h($share['name']) ?></td>
+                <td><?= h($client['name']) ?></td>
                 <td colspan="3"></td>
-                <td class="r"><?= num($share['weight_kg']) ?></td>
-                <td class="r"><?= num($share['share'] * 100, 1) ?></td>
+                <td class="r"><?= num($client['weight_kg']) ?></td>
+                <td class="r"><?= num($trip['weight_kg'] > 0 ? $client['weight_kg'] / $trip['weight_kg'] * 100 : 0, 1) ?></td>
             </tr>
         <?php endforeach; ?>
     <?php endforeach; ?>
